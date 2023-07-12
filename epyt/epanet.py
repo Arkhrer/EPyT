@@ -459,7 +459,7 @@ def isList(var):
 class epanet:
     """ EPyt main functions class """
 
-    def __init__(self, *argv, version=2.2, loadfile=False):
+    def __init__(self, *argv, version=2.2, loadfile=False, verbose=True):
         # Constants
         # Demand model types. DDA #0 Demand driven analysis,
         # PDA #1 Pressure driven analysis.
@@ -518,10 +518,12 @@ class epanet:
                              'NOT', 'BELOW', 'ABOVE']
 
         # Initial attributes
+        self.verbose = verbose
         self.classversion = '1.0.6'
-        self.api = epanetapi(version)
-        print(f'EPANET version {self.getVersion()} '
-              f'loaded (EPyT version {self.classversion}).')
+        self.api = epanetapi(version, self.verbose)
+        if self.verbose:
+            print(f'EPANET version {self.getVersion()} '
+                f'loaded (EPyT version {self.classversion}).')
 
         # ToolkitConstants: Contains all parameters from epanet2_2.h
         self.ToolkitConstants = ToolkitConstants()
@@ -580,7 +582,8 @@ class epanet:
             self.netName = os.path.basename(self.InputFile)
             self.LibEPANETpath = self.api.LibEPANETpath
             self.LibEPANET = self.api.LibEPANET
-            print(f'Input File {self.netName} loaded successfully.\n')
+            if self.verbose:
+                print(f'Input File {self.netName} loaded successfully.\n')
         else:
             self.createProject()
 
@@ -10324,7 +10327,8 @@ class epanet:
         for file in Path(".").glob("@#*.txt"):
             file.unlink()
 
-        print(f'Close toolkit for the input file "{self.netName[0:-4]}". EPANET Toolkit is unloaded.\n')
+        if self.verbose:
+            print(f'Close toolkit for the input file "{self.netName[0:-4]}". EPANET Toolkit is unloaded.\n')
 
     def useHydraulicFile(self, hydname):
         """ Uses the contents of the specified file as the current binary hydraulics file.
@@ -11108,12 +11112,13 @@ class epanetapi:
 
     EN_MAXID = 32  # toolkit constant
 
-    def __init__(self, version=2.2):
+    def __init__(self, version=2.2, verbose = True):
         """Load the EPANET library.
 
         Parameters:
         version     EPANET version to use (currently 2.2)
         """
+        self.verbose = verbose
         self._lib = None
         self.errcode = 0
         self.isloaded = False
@@ -11809,7 +11814,8 @@ class epanetapi:
         if self.errcode:
             errmssg = ctypes.create_string_buffer(150)
             self._lib.ENgeterror(self.errcode, ctypes.byref(errmssg), 150)
-            warnings.warn(errmssg.value.decode())
+            if self.verbose:
+                warnings.warn(errmssg.value.decode())
 
     def ENgetflowunits(self):
         """ Retrieves a project's flow units.
